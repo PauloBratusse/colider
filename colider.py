@@ -1,4 +1,6 @@
 import random
+import os
+
 ############################################################################
 class Particle:
     def __init__(self,x,y,vx,vy):
@@ -15,22 +17,21 @@ class Particle:
             if left: 
                 self.x = abs(x_temp)
                 self.vx *= -1
-                print("ping left")
+
             if right:
                 delta_x = x_temp - frontier.xf
                 self.x = frontier.xf - delta_x
                 self.vx *= -1
-                print("ping right")
+
             if bottom: 
                 self.y = abs(y_temp)
                 self.vy *= -1
-                print("ping bot")
+
             if top:
                 delta_y = y_temp - frontier.yf
                 self.y = frontier.yf - delta_y
                 self.vy *= -1
-                print("ping top")
-            
+     
         else:
           self.x = x_temp
           self.y = y_temp
@@ -38,7 +39,7 @@ class Particle:
 
 
     def position(self):
-        print(self.x,self.y)
+        return self.x,self.y
 ############################################################################
 
 class Frontier:
@@ -59,11 +60,7 @@ class Frontier:
         return collide_left, collide_right, collide_bottom, collide_top, collide_any
 
 ############################################################################
-
-
-
-
-def init_sim(quantity,cx,cy):
+def init_sim(quantity,cx=1,cy=1):
     particles = []
     frontier = Frontier(cx,cy)
     for q in range(quantity):
@@ -80,13 +77,43 @@ def temporal_step(delta,particle_index,particles,frontier):
     particles[particle_index].step(delta,frontier)
     #particles[particle_index].position()
 #-------------------------------------------------------------------------------------------------------------------------------
-    
-quantity = 2  
-delta = 1
-steps = 3000
-particles,frontier = init_sim(quantity,1,1)
+
+def main():
 
 
-for step in range(steps):
-    temporal_step(delta,0,particles,frontier)
+    quantity = None  
+    delta = None
+    steps = None
 
+    with open("colider.cfg", 'r') as f:
+        for line in f:
+            line = line.strip() 
+            if not line or line.startswith("#"):
+                continue
+            var, value = line.split("=")
+            var = var.strip().lower()
+            value = value.strip()
+            if var == "particles_quantity":
+                quantity = int(value)
+            elif var == "delta":
+                delta = float(value)
+            elif var == "steps":
+                steps = int(value)
+            elif var == "box_width":
+                width = float(value)
+            elif var == "box_lenght":
+                lenght = float(value)
+        if delta is None or steps is None or quantity is None:
+            return print("Core config not present, exit script")
+
+    print('Starting Simulation with:')
+    print(f'{quantity} Particles')
+    print(f'{delta} Delta t')
+    print(f'{steps} steps')
+
+    particles,frontier = init_sim(quantity,lenght,width)
+    for step in range(steps):
+        temporal_step(delta,0,particles,frontier)
+
+
+main()
