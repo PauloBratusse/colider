@@ -1,49 +1,96 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Animação de Partículas (Canvas)</title>
+
 <style>
-#container {
-  width: 400px;
-  height: 400px;
-  position: relative;
-  background: yellow;
-}
-#animate {
-  width: 5px;
-  height: 5px;
-  border-radius: 5px;
-  position: absolute;
-  background-color: red;
-}
+  body {
+    background: #111;
+    color: #eee;
+    font-family: sans-serif;
+    text-align: center;
+  }
+
+  canvas {
+    background: #000;
+    border: 1px solid #444;
+    display: block;
+    margin: 20px auto;
+  }
 </style>
+</head>
+
 <body>
 
-<p><button onclick="myMove()">Start</button></p> 
-
-<div id ="container">
-  <div id ="animate"></div>
-</div>
+<h2>Animação de Partículas (Canvas)</h2>
+<canvas id="canvas" width="600" height="600"></canvas>
 
 <script>
-function myMove() {
-  let id = null;
-  const elem = document.getElementById("animate");   
-  let pos = 0;
-  clearInterval(id);
-  id = setInterval(frame, 5);
-  function frame() {
-    if (pos == 350) {
-      clearInterval(id);
-    } else {
-      pos++; 
-      elem.style.top = pos + "px"; 
-      elem.style.left = pos + "px"; 
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const W = canvas.width;
+const H = canvas.height;
+
+// ============================
+// Carrega dados
+// ============================
+fetch('colider_output.txt')
+  .then(r => r.text())
+  .then(text => {
+    const linhas = text.trim().split('\n');
+
+    const [, qtdParticulas] = linhas.shift().split(';');
+    const TOTAL_PARTICULAS = Number(qtdParticulas);
+
+    const frames = {};
+
+    linhas.forEach(linha => {
+      const [step, id, x, y] = linha.split(';').map(Number);
+      if (!frames[step]) frames[step] = [];
+      frames[step].push({ id, x, y });
+    });
+
+    iniciarAnimacao(frames, TOTAL_PARTICULAS);
+  });
+
+// ============================
+// Animação em Canvas
+// ============================
+function iniciarAnimacao(frames, TOTAL_PARTICULAS) {
+  const steps = Object.keys(frames)
+    .map(Number)
+    .sort((a, b) => a - b);
+
+  let frameIndex = 0;
+  const raio = 3;
+
+  function render() {
+    ctx.clearRect(0, 0, W, H);
+
+    const frame = frames[steps[frameIndex]];
+
+    for (let i = 0; i < frame.length; i++) {
+      const p = frame[i];
+
+      const x = p.x * W;
+      const y = (1 - p.y) * H;
+
+      const hue = (p.id / TOTAL_PARTICULAS) * 360;
+
+      ctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
+      ctx.beginPath();
+      ctx.arc(x, y, raio, 0, Math.PI * 2);
+      ctx.fill();
     }
+
+    frameIndex = (frameIndex + 1) % steps.length;
+    requestAnimationFrame(render);
   }
+
+  render();
 }
-
-fetch("myText.txt")
-  .then((res) => res.text())
-
 </script>
 
 </body>

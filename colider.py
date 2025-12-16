@@ -60,14 +60,20 @@ class Frontier:
         return collide_left, collide_right, collide_bottom, collide_top, collide_any
 
 ############################################################################
-def init_sim(quantity,cx=1,cy=1):
+def init_sim(quantity,cx=1,cy=1,vel_col=1):
     particles = []
     frontier = Frontier(cx,cy)
+    colx = 1
+    coly = 1
     for q in range(quantity):
         x = random.random()
         y = random.random()
-        vx = (random.random()/10) - 0.05
-        vy = (random.random()/10) - 0.05
+        if random.random() > 0.5:
+            colx = -1
+        if random.random() > 0.5:
+            coly = -1
+        vx = (random.random()*vel_col) * colx
+        vy = (random.random()*vel_col) * coly 
         particle_a = Particle(x,y,vx,vy)
         particles.append(particle_a)
     return particles,frontier
@@ -78,11 +84,11 @@ def temporal_step(delta,particle_index,particles,frontier):
     x_now,y_now = particles[particle_index].position()
     return x_now,y_now 
 
-def save_output(x,y,quantity,steps):
+def save_output(passo,id,x,y,quantity):
     with open('colider_output.txt','w+') as f:
-        f.write(f'{quantity}\n')
-        for a in range(steps):
-            f.write(str(x[a])+";"+str(y[a])+'\n')
+        f.write(f'quantity;{quantity}\n')
+        for a in range(len(x)):
+            f.write(str(passo[a])+";"+str(id[a])+";"+str(x[a])+";"+str(y[a])+'\n')
 #-------------------------------------------------------------------------------------------------------------------------------
 
 def main():
@@ -94,7 +100,8 @@ def main():
 
     x = []
     y = []
-
+    id = []
+    passo = [] 
     with open("colider.cfg", 'r') as f:
         for line in f:
             line = line.strip() 
@@ -113,6 +120,8 @@ def main():
                 width = float(value)
             elif var == "box_lenght":
                 lenght = float(value)
+            elif var == "velocity_coeficient":
+                vel_col = float(value)
         if delta is None or steps is None or quantity is None:
             return print("Core config not present, exit script")
 
@@ -121,12 +130,14 @@ def main():
     print(f'{delta} Delta t')
     print(f'{steps} steps')
 
-    particles,frontier = init_sim(quantity,lenght,width)
+    particles,frontier = init_sim(quantity,lenght,width,vel_col)
     for step in range(steps):
-       x_now,y_now = temporal_step(delta,0,particles,frontier)
-       x.append(x_now)
-       y.append(y_now)
-
-    save_output(x,y,quantity,steps)
+       for p in range(quantity):
+        x_now,y_now = temporal_step(delta,p,particles,frontier)
+        x.append(x_now)
+        y.append(y_now)
+        id.append(p)
+        passo.append(step)
+    save_output(passo,id,x,y,quantity)
 
 main()
