@@ -75,7 +75,14 @@ def init_sim(quantity,cx=1,cy=1):
 
 def temporal_step(delta,particle_index,particles,frontier):
     particles[particle_index].step(delta,frontier)
-    #particles[particle_index].position()
+    x_now,y_now = particles[particle_index].position()
+    return x_now,y_now 
+
+def save_output(x,y,quantity,steps):
+    with open('colider_output.txt','w+') as f:
+        f.write(f'{quantity}\n')
+        for a in range(steps):
+            f.write(str(x[a])+";"+str(y[a])+'\n')
 #-------------------------------------------------------------------------------------------------------------------------------
 
 def main():
@@ -84,6 +91,9 @@ def main():
     quantity = None  
     delta = None
     steps = None
+
+    x = []
+    y = []
 
     with open("colider.cfg", 'r') as f:
         for line in f:
@@ -113,7 +123,10 @@ def main():
 
     particles,frontier = init_sim(quantity,lenght,width)
     for step in range(steps):
-        temporal_step(delta,0,particles,frontier)
+       x_now,y_now = temporal_step(delta,0,particles,frontier)
+       x.append(x_now)
+       y.append(y_now)
 
+    save_output(x,y,quantity,steps)
 
 main()
