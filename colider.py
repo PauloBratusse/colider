@@ -3,11 +3,12 @@ import os
 
 ############################################################################
 class Particle:
-    def __init__(self,x,y,vx,vy):
+    def __init__(self,x,y,vx,vy,r):
         self.x = x 
         self.y = y
         self.vx = vx
         self.vy = vy
+        self.radius = r
 
     def step(self,delta,frontier):
         x_temp = self.x + self.vx*delta
