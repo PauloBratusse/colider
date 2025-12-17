@@ -28,14 +28,27 @@
     border: 1px solid #333;
     background: #000;
   }
+  #button {
+    width: 120px;
+    height: 20px;
+    margin: 20px 20px 20px 40px;
+    border: 1px solid #333;
+    border-radius: 25px;
+    background: #fff;
+  }
+
+   #button:hover {
+    background: #aaa;
+  }
 </style>
 </head>
 
 <body>
 <h2>Simulação 3D – Caixa [0,1]³</h2>
-
-<div id="viewer"></div>
-
+<div>
+  <div id="viewer"></div>
+  <button id="button" onclick="generateSim()">Generate Sim</button>
+</div>
 <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
 
 <script>
@@ -45,10 +58,27 @@ let frameData = [];
 let frameIndex = 0;
 let container;
 
+// generate sim
+
+function limparCena() {
+  while (scene.children.length > 0) {
+    scene.remove(scene.children[0])
+  }
+}
+
+function generateSim(){
+  limparCena();
+  container.innerHTML = '';
+  fetch('/generate_sim').then(r => r.text())
+  .then(text => prepararDados(text))
+  .catch(err => console.error(err));
+}
+
+
 // ============================
 // FETCH
 // ============================
-fetch('colider_output.txt')
+fetch('/colider_output')
   .then(r => r.text())
   .then(text => prepararDados(text))
   .catch(err => console.error(err));

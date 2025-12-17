@@ -4,7 +4,6 @@
 proximos passos:
 -expandir para 3D os calculos (DONE)
 -Refazer o vizualizador para refletir o 3D (DONE)
--setup do servidor que entregara o software
--Auto geração da simulação
+-setup do servidor que entregara o software (DONE)
+-Auto geração da simulação (DONE)
 -Reimplementação dos algoritimos de random.random()
--portar para react
