@@ -2,94 +2,210 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Animação de Partículas (Canvas)</title>
+<title>Visualização 3D – Partículas</title>
 
 <style>
   body {
+    margin: 0;
     background: #111;
     color: #eee;
     font-family: sans-serif;
-    text-align: center;
   }
 
-  canvas {
+  h2 {
+    text-align: center;
+    margin: 15px 0;
+    font-size: 16px;
+    font-weight: normal;
+    opacity: 0.8;
+  }
+
+  /* DIV QUE CONTÉM A SIMULAÇÃO */
+  #viewer {
+    width: 400px;
+    height: 400px;
+    margin: 0 auto 20px;
+    border: 1px solid #333;
     background: #000;
-    border: 1px solid #444;
-    display: block;
-    margin: 20px auto;
   }
 </style>
 </head>
 
 <body>
+<h2>Simulação 3D – Caixa [0,1]³</h2>
 
-<h2>Animação de Partículas (Canvas)</h2>
-<canvas id="canvas" width="200" height="200"></canvas>
+<div id="viewer"></div>
+
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
 
 <script>
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-
-const W = canvas.width;
-const H = canvas.height;
+let scene, camera, renderer;
+let geometry, positions;
+let frameData = [];
+let frameIndex = 0;
+let container;
 
 // ============================
-// Carrega dados
+// FETCH
 // ============================
 fetch('colider_output.txt')
   .then(r => r.text())
-  .then(text => {
-    const linhas = text.trim().split('\n');
-
-    const [, qtdParticulas] = linhas.shift().split(';');
-    const TOTAL_PARTICULAS = Number(qtdParticulas);
-
-    const frames = {};
-
-    linhas.forEach(linha => {
-      const [step, id, x, y] = linha.split(';').map(Number);
-      if (!frames[step]) frames[step] = [];
-      frames[step].push({ id, x, y });
-    });
-
-    iniciarAnimacao(frames, TOTAL_PARTICULAS);
-  });
+  .then(text => prepararDados(text))
+  .catch(err => console.error(err));
 
 // ============================
-// Animação em Canvas
+// PREPARA DADOS
 // ============================
-function iniciarAnimacao(frames, TOTAL_PARTICULAS) {
-  const steps = Object.keys(frames)
-    .map(Number)
-    .sort((a, b) => a - b);
+function prepararDados(text) {
+  const linhas = text.trim().split('\n');
 
-  let frameIndex = 0;
-  const raio = 3;
+  const [, totalStr] = linhas.shift().split(';');
+  const TOTAL_PARTICULAS = Number(totalStr);
 
-  function render() {
-    ctx.clearRect(0, 0, W, H);
+  const frames = new Map();
 
-    const frame = frames[steps[frameIndex]];
+  for (const linha of linhas) {
+    const p = linha.split(';');
+    if (p.length !== 5) continue;
 
-    for (let i = 0; i < frame.length; i++) {
-      const p = frame[i];
+    const step = Number(p[0]);
+    const id   = Number(p[1]);
+    const x    = Number(p[2]);
+    const y    = Number(p[3]);
+    const z    = Number(p[4]);
 
-      const x = p.x * W;
-      const y = (1 - p.y) * H;
-
-      const hue = (p.id / TOTAL_PARTICULAS) * 360;
-
-      ctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
-      ctx.beginPath();
-      ctx.arc(x, y, raio, 0, Math.PI * 2);
-      ctx.fill();
+    if (!frames.has(step)) {
+      frames.set(step, new Float32Array(TOTAL_PARTICULAS * 3));
     }
 
-    frameIndex = (frameIndex + 1) % steps.length;
-    requestAnimationFrame(render);
+    const arr = frames.get(step);
+
+    arr[id * 3 + 0] = x;
+    arr[id * 3 + 1] = y;
+    arr[id * 3 + 2] = z;
   }
 
-  render();
+  frameData = [...frames.keys()]
+    .sort((a, b) => a - b)
+    .map(k => frames.get(k));
+
+  iniciarCena(TOTAL_PARTICULAS);
+}
+
+// ============================
+// TEXTURA DE BOLINHA
+// ============================
+function criarTexturaBola() {
+  const size = 64;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+
+  const ctx = canvas.getContext('2d');
+  const r = size / 2;
+
+  const grad = ctx.createRadialGradient(r, r, 0, r, r, r);
+  grad.addColorStop(0.0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.7, 'rgba(255,255,255,1)');
+  grad.addColorStop(1.0, 'rgba(255,255,255,0)');
+
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(r, r, r, 0, Math.PI * 2);
+  ctx.fill();
+
+  return new THREE.CanvasTexture(canvas);
+}
+
+// ============================
+// CENA
+// ============================
+function iniciarCena(TOTAL_PARTICULAS) {
+  container = document.getElementById('viewer');
+
+  scene = new THREE.Scene();
+
+  camera = new THREE.PerspectiveCamera(
+    100,
+    container.clientWidth / container.clientHeight,
+    0.1,
+    20
+  );
+  camera.position.set(1.6, 1.1, 1.1);
+  camera.lookAt(0.5, 0.5, 0.5);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  container.appendChild(renderer.domElement);
+
+  // Caixa [0,1]³
+  const box = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1)),
+    new THREE.LineBasicMaterial({ color: 0x666666 })
+  );
+  box.position.set(0.5, 0.5, 0.5);
+  scene.add(box);
+
+  // Partículas
+  geometry = new THREE.BufferGeometry();
+  positions = new Float32Array(TOTAL_PARTICULAS * 3);
+
+  geometry.setAttribute(
+    'position',
+    new THREE.BufferAttribute(positions, 3)
+  );
+
+  // Cores fixas por partícula
+  const colors = new Float32Array(TOTAL_PARTICULAS * 3);
+
+  for (let i = 0; i < TOTAL_PARTICULAS; i++) {
+    const c = new THREE.Color().setHSL(i / TOTAL_PARTICULAS, 1.0, 0.5);
+    colors[i * 3 + 0] = c.r;
+    colors[i * 3 + 1] = c.g;
+    colors[i * 3 + 2] = c.b;
+  }
+
+  geometry.setAttribute(
+    'color',
+    new THREE.BufferAttribute(colors, 3)
+  );
+
+  const material = new THREE.PointsMaterial({
+    size: 0.03,
+    map: criarTexturaBola(),
+    transparent: true,
+    vertexColors: true,
+    depthWrite: false,
+    sizeAttenuation: true
+  });
+
+  scene.add(new THREE.Points(geometry, material));
+
+  window.addEventListener('resize', onResize);
+
+  animar();
+}
+
+// ============================
+// ANIMAÇÃO
+// ============================
+function animar() {
+  positions.set(frameData[frameIndex]);
+  geometry.attributes.position.needsUpdate = true;
+
+  frameIndex = (frameIndex + 1) % frameData.length;
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(animar);
+}
+
+// ============================
+// RESIZE (BASEADO NA DIV)
+// ============================
+function onResize() {
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(container.clientWidth, container.clientHeight);
 }
 </script>
 
