@@ -1,2 +1,5 @@
 venv
 colider_output.txt
+__pycache__/
+instance/
+static/

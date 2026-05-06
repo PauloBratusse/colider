@@ -7,3 +7,8 @@ proximos passos:
 -setup do servidor que entregara o software (DONE)
 -Auto geração da simulação (DONE)
 -Reimplementação dos algoritimos de random.random()
+
+
+docker run -p 5432:5432 -e POSTGRES_PASSWORD=1234 postgres
+
+

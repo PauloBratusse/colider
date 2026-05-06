@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colider - Simulação de Partículas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        nav {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        nav a:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        nav a.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        .panel.history {
+            grid-column: 1 / -1;
+        }
+
+        h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+
+        .result.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .result-message {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .image-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .simulation-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .simulation-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .simulation-card-title {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .simulation-card-version {
+            background: #667eea;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .simulation-card-details {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .simulation-card-image {
+            margin: 10px 0;
+        }
+
+        .simulation-card-image img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .simulation-card-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .simulation-card-buttons button {
+            flex: 1;
+            padding: 8px;
+            font-size: 12px;
+            margin: 0;
+        }
+
+        .delete-btn {
+            background: #dc3545 !important;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .filter-buttons button {
+            flex: 1;
+            padding: 10px;
+            background: #f8f9fa;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .filter-buttons button.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 90%;
+            max-height: 90%;
+            overflow: auto;
+        }
+
+        .modal-close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">⚛️ COLIDER</div>
+            <nav>
+                <a id="nav-v1" class="nav-link active" onclick="switchTab('v1')">Simulação V1</a>
+                <a id="nav-v2" class="nav-link" onclick="switchTab('v2')">Simulação V2</a>
+                <a id="nav-history" class="nav-link" onclick="switchTab('history')">Histórico</a>
+            </nav>
+        </header>
+
+        <div class="content">
+            <!-- PAINEL V1 -->
+            <div id="panel-v1" class="panel active">
+                <h2>⚛️ Simulação V1 - Caixa Fechada</h2>
+                
+                <div class="form-group">
+                    <label for="v1-particles">Quantidade de Partículas:</label>
+                    <input type="number" id="v1-particles" value="20" min="1" max="1000">
+                </div>
+
+                <div class="form-group">
+                    <label for="v1-steps">Número de Passos:</label>
+                    <input type="number" id="v1-steps" value="100" min="1" max="10000">
+                </div>
+
+                <div class="form-group">
+                    <label for="v1-delta">Delta (Intervalo Tempo):</label>
+                    <input type="number" id="v1-delta" value="0.01" step="0.001" min="0.001">
+                </div>
+
+                <div class="form-group">
+                    <label for="v1-velocity">Coeficiente de Velocidade:</label>
+                    <input type="number" id="v1-velocity" value="1.0" step="0.1" min="0.1">
+                </div>
+
+                <div class="form-group">
+                    <label for="v1-width">Largura da Caixa:</label>
+                    <input type="number" id="v1-width" value="10.0" step="0.1" min="1">
+                </div>
+
+                <div class="form-group">
+                    <label for="v1-height">Altura da Caixa:</label>
+                    <input type="number" id="v1-height" value="10.0" step="0.1" min="1">
+                </div>
+
+                <div class="form-group">
+                    <label for="v1-depth">Profundidade da Caixa:</label>
+                    <input type="number" id="v1-depth" value="10.0" step="0.1" min="1">
+                </div>
+
+                <button onclick="runSimulation('v1')">Executar Simulação V1</button>
+
+                <div id="v1-loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Executando simulação...</p>
+                </div>
+
+                <div id="v1-result" class="result">
+                    <div class="result-title" id="v1-result-title"></div>
+                    <div class="result-message" id="v1-result-message"></div>
+                    <div class="image-container" id="v1-image-container"></div>
+                </div>
+            </div>
+
+            <!-- PAINEL V2 -->
+            <div id="panel-v2" class="panel">
+                <h2>⚛️ Simulação V2 - Geometria Avançada</h2>
+                
+                <div class="form-group">
+                    <label for="v2-particles">Quantidade de Partículas:</label>
+                    <input type="number" id="v2-particles" value="20" min="1" max="1000">
+                </div>
+
+                <div class="form-group">
+                    <label for="v2-steps">Número de Passos:</label>
+                    <input type="number" id="v2-steps" value="100" min="1" max="10000">
+                </div>
+
+                <div class="form-group">
+                    <label for="v2-delta">Delta (Intervalo Tempo):</label>
+                    <input type="number" id="v2-delta" value="0.01" step="0.001" min="0.001">
+                </div>
+
+                <div class="form-group">
+                    <label for="v2-velocity">Coeficiente de Velocidade:</label>
+                    <input type="number" id="v2-velocity" value="1.0" step="0.1" min="0.1">
+                </div>
+
+                <button onclick="runSimulation('v2')">Executar Simulação V2</button>
+
+                <div id="v2-loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Executando simulação...</p>
+                </div>
+
+                <div id="v2-result" class="result">
+                    <div class="result-title" id="v2-result-title"></div>
+                    <div class="result-message" id="v2-result-message"></div>
+                    <div class="image-container" id="v2-image-container"></div>
+                </div>
+            </div>
+
+            <!-- PAINEL HISTÓRICO -->
+            <div id="panel-history" class="panel history">
+                <h2>📊 Histórico de Simulações</h2>
+
+                <div class="filter-buttons">
+                    <button class="active" onclick="filterSimulations('all')">Todas</button>
+                    <button onclick="filterSimulations('v1')">V1</button>
+                    <button onclick="filterSimulations('v2')">V2</button>
+                </div>
+
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-label">Total</div>
+                        <div class="stat-value" id="stat-total">0</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">V1</div>
+                        <div class="stat-value" id="stat-v1">0</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">V2</div>
+                        <div class="stat-value" id="stat-v2">0</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Tempo Total</div>
+                        <div class="stat-value" id="stat-time">0s</div>
+                    </div>
+                </div>
+
+                <div id="history-container">
+                    <div class="empty-state">Nenhuma simulação realizada ainda.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA IMAGEM EXPANDIDA -->
+    <div id="imageModal" class="modal" onclick="closeImageModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="modal-close" onclick="closeImageModal()">&times;</span>
+            <img id="modalImage" src="" alt="Imagem Expandida" style="max-width: 100%; height: auto;">
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let currentFilter = 'all';
+
+        function switchTab(tab) {
+            // Esconder todos os painéis
+            document.querySelectorAll('.panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+
+            // Remover classe active de todos os links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Mostrar painel selecionado
+            document.getElementById(`panel-${tab}`).classList.add('active');
+            document.getElementById(`nav-${tab}`).classList.add('active');
+
+            // Carregar histórico ao mudar para aba de histórico
+            if (tab === 'history') {
+                loadHistory();
+            }
+        }
+
+        function runSimulation(version) {
+            const prefix = version === 'v1' ? 'v1' : 'v2';
+            const button = event.target;
+            button.disabled = true;
+
+            const formData = {
+                num_particles: parseInt(document.getElementById(`${prefix}-particles`).value),
+                num_steps: parseInt(document.getElementById(`${prefix}-steps`).value),
+                delta: parseFloat(document.getElementById(`${prefix}-delta`).value),
+                velocity_coefficient: parseFloat(document.getElementById(`${prefix}-velocity`).value)
+            };
+
+            if (version === 'v1') {
+                formData.box_width = parseFloat(document.getElementById('v1-width').value);
+                formData.box_height = parseFloat(document.getElementById('v1-height').value);
+                formData.box_depth = parseFloat(document.getElementById('v1-depth').value);
+            }
+
+            // Mostrar loading
+            document.getElementById(`${prefix}-loading`).classList.add('show');
+            document.getElementById(`${prefix}-result`).classList.remove('show');
+
+            fetch(`${API_BASE}/simulate/${version}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById(`${prefix}-loading`).classList.remove('show');
+                const resultDiv = document.getElementById(`${prefix}-result`);
+                
+                if (data.success) {
+                    resultDiv.classList.add('success');
+                    resultDiv.classList.remove('error');
+                    document.getElementById(`${prefix}-result-title`).textContent = '✓ Sucesso!';
+                    document.getElementById(`${prefix}-result-message`).innerHTML = 
+                        `${data.message}<br>Tempo de execução: ${data.execution_time}s`;
+                    
+                    const imageContainer = document.getElementById(`${prefix}-image-container`);
+                    imageContainer.innerHTML = `<img src="${data.animation_path}" alt="Animação da Simulação" onclick="openImageModal('${data.animation_path}')" style="cursor: zoom-in;">`;
+                } else {
+                    resultDiv.classList.remove('success');
+                    resultDiv.classList.add('error');
+                    document.getElementById(`${prefix}-result-title`).textContent = '✗ Erro';
+                    document.getElementById(`${prefix}-result-message`).textContent = data.message;
+                    document.getElementById(`${prefix}-image-container`).innerHTML = '';
+                }
+                
+                resultDiv.classList.add('show');
+                button.disabled = false;
+
+                // Recarregar histórico
+                loadHistory();
+            })
+            .catch(error => {
+                document.getElementById(`${prefix}-loading`).classList.remove('show');
+                const resultDiv = document.getElementById(`${prefix}-result`);
+                resultDiv.classList.remove('success');
+                resultDiv.classList.add('error');
+                document.getElementById(`${prefix}-result-title`).textContent = '✗ Erro';
+                document.getElementById(`${prefix}-result-message`).textContent = `Erro de conexão: ${error.message}`;
+                resultDiv.classList.add('show');
+                button.disabled = false;
+            });
+        }
+
+        function loadHistory() {
+            fetch(`${API_BASE}/simulations`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayHistory(data.data);
+                    }
+                })
+                .catch(error => console.error('Erro ao carregar histórico:', error));
+        }
+
+        function displayHistory(simulations) {
+            const container = document.getElementById('history-container');
+
+            // Filtrar simulações
+            let filtered = simulations;
+            if (currentFilter !== 'all') {
+                filtered = simulations.filter(sim => sim.version === currentFilter);
+            }
+
+            // Atualizar estatísticas
+            updateStats(simulations);
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state">Nenhuma simulação encontrada.</div>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(sim => `
+                <div class="simulation-card">
+                    <div class="simulation-card-header">
+                        <div>
+                            <div class="simulation-card-title">Simulação #${sim.id}</div>
+                            <div class="simulation-card-version">${sim.version.toUpperCase()}</div>
+                        </div>
+                        <div style="font-size: 12px; color: #999;">
+                            ${new Date(sim.created_at).toLocaleString('pt-BR')}
+                        </div>
+                    </div>
+                    <div class="simulation-card-details">
+                        <strong>Configuração:</strong><br>
+                        Partículas: ${sim.num_particles} | 
+                        Passos: ${sim.num_steps} | 
+                        Delta: ${sim.delta} | 
+                        Velocidade: ${sim.velocity_coefficient}<br>
+                        <strong>Tempo de execução:</strong> ${sim.execution_time.toFixed(2)}s
+                    </div>
+                    <div class="simulation-card-image">
+                        <img src="${sim.animation_path}" alt="Resultado" onclick="openImageModal('${sim.animation_path}')" style="cursor: zoom-in;">
+                    </div>
+                    <div class="simulation-card-buttons">
+                        <button class="delete-btn" onclick="deleteSimulation(${sim.id})">🗑️ Deletar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateStats(simulations) {
+            const total = simulations.length;
+            const v1Count = simulations.filter(s => s.version === 'v1').length;
+            const v2Count = simulations.filter(s => s.version === 'v2').length;
+            const totalTime = simulations.reduce((sum, s) => sum + (s.execution_time || 0), 0);
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-v1').textContent = v1Count;
+            document.getElementById('stat-v2').textContent = v2Count;
+            document.getElementById('stat-time').textContent = totalTime.toFixed(2) + 's';
+        }
+
+        function filterSimulations(filter) {
+            currentFilter = filter;
+            
+            // Atualizar botões
+            document.querySelectorAll('.filter-buttons button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Recarregar histórico
+            loadHistory();
+        }
+
+        function deleteSimulation(id) {
+            if (confirm('Tem certeza que deseja deletar esta simulação?')) {
+                fetch(`${API_BASE}/simulation/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        loadHistory();
+                    }
+                })
+                .catch(error => console.error('Erro ao deletar:', error));
+            }
+        }
+
+        function openImageModal(imagePath) {
+            document.getElementById('modalImage').src = imagePath;
+            document.getElementById('imageModal').classList.add('show');
+        }
+
+        function closeImageModal(event) {
+            if (event && event.target !== document.getElementById('imageModal')) return;
+            document.getElementById('imageModal').classList.remove('show');
+        }
+
+        // Carregar histórico quando a página carrega
+        document.addEventListener('DOMContentLoaded', () => {
+            loadHistory();
+        });
+    </script>
+</body>
+</html>
